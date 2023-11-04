@@ -64,7 +64,7 @@ class PayPagingFailJobConfiguration(
         reader.setQueryString("SELECT p FROM Pay p WHERE p.successStatus = false")
         reader.pageSize = CHUNK_SIZE
         reader.setEntityManagerFactory(entityManagerFactory)
-        reader.name = "payPagingReader"
+        reader.name = JOB_NAME + "Reader"
 
         return reader
     }
