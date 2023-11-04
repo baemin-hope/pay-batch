@@ -61,7 +61,7 @@ class PayPagingFailJobConfiguration(
         }
 
         // shop을 paramter로 받아 쿼리 작업을 수행하는 기능을 향후 추가합니다.
-        reader.setQueryString("SELECT p FROM Pay p WHERE p.successStatus = false")
+        reader.setQueryString("SELECT p FROM Pay p WHERE p.successStatus = false ORDER BY p.orderDate DESC")
         reader.pageSize = CHUNK_SIZE
         reader.setEntityManagerFactory(entityManagerFactory)
         reader.name = JOB_NAME + "Reader"
@@ -86,8 +86,8 @@ class PayPagingFailJobConfiguration(
             id = pay.id,
             amount = pay.amount,
             order = pay.order,
-            isSuccess = true
+            isSuccess = true,
+            orderDate = pay.orderDate
         )
     }
-
 }

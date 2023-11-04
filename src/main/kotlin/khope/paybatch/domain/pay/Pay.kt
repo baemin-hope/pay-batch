@@ -1,6 +1,7 @@
 package khope.paybatch.domain.pay
 
 import khope.paybatch.domain.order.Order
+import java.time.LocalDateTime
 import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -19,5 +20,7 @@ class Pay(
     @OneToOne
     val order: Order,
 
-    val isSuccess: Boolean
+    val isSuccess: Boolean,
+
+    val orderDate: LocalDateTime
 )
