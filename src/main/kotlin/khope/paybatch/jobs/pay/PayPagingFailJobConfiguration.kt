@@ -12,7 +12,6 @@ import org.springframework.batch.core.configuration.annotation.StepScope
 import org.springframework.batch.item.ItemProcessor
 import org.springframework.batch.item.database.JpaItemWriter
 import org.springframework.batch.item.database.JpaPagingItemReader
-import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,7 +23,7 @@ import javax.persistence.EntityManagerFactory
 class PayPagingFailJobConfiguration(
     private val entityManagerFactory: EntityManagerFactory,
     private val stepBuilderFactory: StepBuilderFactory,
-    private val jobBuilderFactory: JobBuilderFactory
+    private val jobBuilderFactory: JobBuilderFactory,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass.simpleName)
@@ -55,12 +54,18 @@ class PayPagingFailJobConfiguration(
     @Bean
     @StepScope
     fun payPagingReader(): JpaPagingItemReader<Pay> {
-        return JpaPagingItemReaderBuilder<Pay>()
-            .pageSize(CHUNK_SIZE)
-            .queryString("SELECT p FROM Pay p WHERE p.isSuccess = false")
-            .entityManagerFactory(entityManagerFactory)
-            .name(JOB_NAME + "Reader")
-            .build()
+        val reader: JpaPagingItemReader<Pay> = object : JpaPagingItemReader<Pay>() {
+            override fun getPage(): Int {
+                return 0
+            }
+        }
+
+        reader.setQueryString("SELECT p FROM Pay p WHERE p.successStatus = false")
+        reader.pageSize = CHUNK_SIZE
+        reader.setEntityManagerFactory(entityManagerFactory)
+        reader.name = "payPagingReader"
+
+        return reader
     }
 
     @Bean
