@@ -1,3 +1,3 @@
 package khope.paybatch.common
 
-data class BaseJobParameter(val version: Int)
+open class BaseJobParameter(open val version: Int)
