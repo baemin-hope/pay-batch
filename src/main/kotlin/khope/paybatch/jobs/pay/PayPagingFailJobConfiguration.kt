@@ -130,6 +130,7 @@ class PayPagingFailJobConfiguration(
     fun payPagingWriter(): JpaItemWriter<Pay> {
         val writer = JpaItemWriter<Pay>()
         writer.setEntityManagerFactory(entityManagerFactory)
+        writer.setUsePersist(false)
         return writer
     }
 
