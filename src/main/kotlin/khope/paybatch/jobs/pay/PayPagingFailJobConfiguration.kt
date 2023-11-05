@@ -138,7 +138,7 @@ class PayPagingFailJobConfiguration(
     private fun newSuccessPay(pay: Pay): Pay = Pay(
         id = pay.id,
         amount = pay.amount,
-        order = pay.order,
+        itemName = pay.itemName,
         isSuccess = true,
         orderDate = pay.orderDate
     )
@@ -146,7 +146,7 @@ class PayPagingFailJobConfiguration(
     private fun clearPay(pay: Pay) = Pay(
         id = pay.id,
         amount = pay.amount,
-        order = pay.order,
+        itemName = pay.itemName,
         isSuccess = false,
         orderDate = pay.orderDate
     )

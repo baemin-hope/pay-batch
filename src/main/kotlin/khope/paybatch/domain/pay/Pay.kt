@@ -17,8 +17,7 @@ class Pay(
 
     val amount: Int,
 
-    @OneToOne
-    val order: Order,
+    val itemName: String,
 
     val isSuccess: Boolean,
 
