@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.transaction.PlatformTransactionManager
 import javax.persistence.EntityManagerFactory
 
 
@@ -24,7 +23,7 @@ import javax.persistence.EntityManagerFactory
 class PayPagingFailJobConfiguration(
     private val entityManagerFactory: EntityManagerFactory,
     private val stepBuilderFactory: StepBuilderFactory,
-    private val jobBuilderFactory: JobBuilderFactory,
+    private val jobBuilderFactory: JobBuilderFactory
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass.simpleName)
@@ -109,7 +108,9 @@ class PayPagingFailJobConfiguration(
         }
 
         // shop을 paramter로 받아 쿼리 작업을 수행하는 기능을 향후 추가합니다.
-        reader.setQueryString("SELECT p FROM Pay p WHERE p.successStatus = false ORDER BY p.orderDate DESC")
+        reader.setQueryString("SELECT p " +
+                "FROM Pay p WHERE p.successStatus = false" +
+                "ORDER BY p.orderDate DESC")
         reader.pageSize = CHUNK_SIZE
         reader.setEntityManagerFactory(entityManagerFactory)
         reader.name = JOB_NAME + "Reader"
