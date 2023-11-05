@@ -3,8 +3,7 @@ package khope.paybatch.jobs.pay
 import khope.paybatch.domain.pay.Pay
 import khope.paybatch.jobs.pay.PayPagingFailJobConfiguration.Companion.JOB_NAME
 import org.slf4j.LoggerFactory
-import org.springframework.batch.core.Job
-import org.springframework.batch.core.Step
+import org.springframework.batch.core.*
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.JobScope
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
@@ -12,9 +11,11 @@ import org.springframework.batch.core.configuration.annotation.StepScope
 import org.springframework.batch.item.ItemProcessor
 import org.springframework.batch.item.database.JpaItemWriter
 import org.springframework.batch.item.database.JpaPagingItemReader
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.transaction.PlatformTransactionManager
 import javax.persistence.EntityManagerFactory
 
 
@@ -33,6 +34,14 @@ class PayPagingFailJobConfiguration(
         const val CHUNK_SIZE = 10
     }
 
+    @Bean
+    @JobScope
+    fun parameter(
+        @Value("#{jobParameters[VERSION]}") version: Int,
+        @Value("#{jobParameters[SHOP]}") shop: String
+    ): PayPagingFailJobParameter = PayPagingFailJobParameter(version, shop)
+
+
     @Bean(JOB_NAME)
     fun payPagingFailJob(): Job {
         return jobBuilderFactory.get(JOB_NAME + "Job")
@@ -48,6 +57,45 @@ class PayPagingFailJobConfiguration(
             .reader(payPagingReader())
             .processor(payPagingProcessor())
             .writer(payPagingWriter())
+            .listener(object: StepExecutionListener {
+                override fun beforeStep(stepExecution: StepExecution) {
+                    log.info("before Step payPagingStep")
+                }
+
+                override fun afterStep(stepExecution: StepExecution): ExitStatus? {
+                    val exitCode = stepExecution.exitStatus.exitCode
+                    log.info("afterStep payPagingStep - Status {}", exitCode)
+                    if(exitCode == ExitStatus.FAILED.exitCode) {
+                        log.error("payPagingStep FAILED!!")
+                    }
+                    return null
+                }
+            })
+            .build()
+    }
+
+    @Bean
+    @JobScope
+    fun payPagingClearStep(): Step {
+        return stepBuilderFactory.get(JOB_NAME + "ClearStep")
+            .chunk<Pay, Pay>(CHUNK_SIZE)
+            .reader(payPagingReader())
+            .processor(payClearProcessor())
+            .writer(payPagingWriter())
+            .listener(object: StepExecutionListener {
+                override fun beforeStep(stepExecution: StepExecution) {
+                    log.info("before Step payClearStep")
+                }
+
+                override fun afterStep(stepExecution: StepExecution): ExitStatus? {
+                    val exitCode = stepExecution.exitStatus.exitCode
+                    log.info("afterStep payClearStep - Status {}", exitCode)
+                    if(exitCode == ExitStatus.FAILED.exitCode) {
+                        log.error("payClearStep FAILED!!")
+                    }
+                    return null
+                }
+            })
             .build()
     }
 
@@ -75,19 +123,30 @@ class PayPagingFailJobConfiguration(
 
     @Bean
     @StepScope
+    fun payClearProcessor(): ItemProcessor<Pay, Pay> = ItemProcessor { clearPay(it) }
+
+    @Bean
+    @StepScope
     fun payPagingWriter(): JpaItemWriter<Pay> {
         val writer = JpaItemWriter<Pay>()
         writer.setEntityManagerFactory(entityManagerFactory)
         return writer
     }
 
-    private fun newSuccessPay(pay: Pay): Pay{
-        return Pay(
-            id = pay.id,
-            amount = pay.amount,
-            order = pay.order,
-            isSuccess = true,
-            orderDate = pay.orderDate
-        )
-    }
+    private fun newSuccessPay(pay: Pay): Pay = Pay(
+        id = pay.id,
+        amount = pay.amount,
+        order = pay.order,
+        isSuccess = true,
+        orderDate = pay.orderDate
+    )
+
+    private fun clearPay(pay: Pay) = Pay(
+        id = pay.id,
+        amount = pay.amount,
+        order = pay.order,
+        isSuccess = false,
+        orderDate = pay.orderDate
+    )
+
 }
